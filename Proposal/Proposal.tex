@@ -1,0 +1,44 @@
+\documentclass{article}
+
+\usepackage{fancyhdr}
+\usepackage{mdwlist}
+
+\pagestyle{fancy}
+\headheight 35pt
+\headsep 16pt
+\begin{document}
+
+\lhead{\textbf{Project Proposal} \\ CSSE 433}
+\rhead{Will Anderson \\ Tim Ekl \\ Eric Reed}
+
+\section{Executive Summary}
+
+This document briefly describes KennySync, an implementation of the Paxos conflict-resolution algorithm. KennySync is prepared as a project for the Advanced Databases course at Rose-Hulman Institute of Technology by Will Anderson, Tim Ekl, and Eric Reed. Implemented in Ruby, KennySync is aimed to be a complete, standalone project, with the option of expanding to function as a wrapper around a distributed database system (such as Redis).
+
+\section{KennySync: A Paxos Implementation}
+
+With the rise of concurrent processing and massively scalable systems, consistency and accuracy are of more concern than ever in data storage and access. KennySync is a project to implement the Paxos algorithm, introduced by Leslie Lamport in 1998, in order to provide stable, consistent data storage and retrieval.
+
+\subsection{Project Goals}
+
+Due to the uncertain nature of integrating with some other systems under consideration, the goals of the KennySync project are separated into two major categories: those which are mandatory for project completion, and those which are contingent on time available. By its completion, KennySync \textit{must}:
+
+\begin{itemize*}
+\item Be runnable as a node in a Paxos implementation
+\item Function as all roles described in ``basic'' Paxos, including proposer, accepter, and learner
+\item Propagate values through the network of nodes, and allow those values to be retrieved
+\item Provide some visualization into the system, for verifying functionality and watching value propoagation
+\item Be fully failure-resistant and scalable as described by Lamport
+\end{itemize*}
+
+KennySync also \textit{may}:
+
+\begin{itemize*}
+\item Integrate or wrap an existing database system, such as Redis or SQLite
+\item Collect and provide statistics about the network of nodes
+\end{itemize*}
+
+\subsection{Implementation}
+
+
+\end{document}
