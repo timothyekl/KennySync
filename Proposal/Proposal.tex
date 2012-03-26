@@ -1,6 +1,7 @@
 \documentclass{article}
 
 \usepackage{fancyhdr}
+\usepackage[colorlinks=true]{hyperref}
 \usepackage{mdwlist}
 
 \pagestyle{fancy}
@@ -52,6 +53,19 @@ The members of the KennySync team are:
 \item Eric Reed, senior student in Computer Science and Mathematics
 \end{itemize*}
 
+\section{Literature Review}
 
+To begin work and gain a conceptual understanding of both the Paxos algorithm and current work in the field, the team intends to read the following papers describing variations on the Paxos algorithm (all by Leslie Lamport):
+
+\begin{itemize*}
+\item A simple description of Paxos \cite{simple-paxos}
+\item The fuller, original paper describing Paxos \cite{paxos}
+\item A version of Paxos that trades fault tolerance for cheap computations \cite{cheap-paxos}
+\item A version of Paxos that runs faster \cite{fast-paxos}
+\item A generalization of the ``fast Paxos'' above \cite{generalized-paxos}
+\end{itemize*}
+
+\bibliographystyle{plain}
+\bibliography{Proposal}
 
 \end{document}
