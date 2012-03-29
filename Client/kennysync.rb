@@ -6,6 +6,10 @@
 
 require 'socket'
 
+# Increment this number when network-protocol compatibility changes
+VERSION = 1
+
+# Primary node class
 class Node
 
   attr_accessor :listen_port
@@ -16,8 +20,20 @@ class Node
     
     self.listen_port = 7115
 
-    self.serv_sock = TCPServer.new("", self.listen_port)
-    puts "Listening on port #{self.listen_port}"
+    while self.listen_port < 65536
+      begin
+        self.serv_sock = TCPServer.new("", self.listen_port)
+        break
+      rescue Exception => e
+        self.listen_port += 1
+      end
+    end
+
+    if self.serv_sock.nil?
+      raise "Could not establish TCP socket"
+    else
+      puts "Listening on port #{self.listen_port}"
+    end
   end
 
   def start
