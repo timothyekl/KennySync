@@ -43,9 +43,17 @@ class Node
   def connect_other_nodes
     self.connections = []
     DEFAULT_PORT.upto(self.listen_port - 1).each do |p|
-      sock = TCPSocket.new('localhost', p)
-      self.connections << sock
-      puts "Connected on port #{p}"
+      Thread.start(TCPSocket.new('localhost', p)) do |sock|
+        version_string = "kennysync #{VERSION}"
+        sock.puts version_string
+        s = sock.gets.chomp
+        if s == version_string
+          self.connections << sock
+          puts "Connected on port #{p}"
+        else
+          puts "Version mismatch on port #{p}"
+        end
+      end
     end
   end
 
@@ -54,8 +62,15 @@ class Node
 
     loop do
       Thread.start(self.serv_sock.accept) do |client|
-        self.connections << client
-        puts "Accepted connection from client"
+        version_string = "kennysync #{VERSION}"
+        s = client.gets.chomp
+        client.puts version_string
+        if s == version_string
+          self.connections << client
+          puts "Accepted connection from client"
+        else
+          puts "Version mismatch from client"
+        end
       end
     end
   end
