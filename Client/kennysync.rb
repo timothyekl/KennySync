@@ -9,16 +9,20 @@ require 'socket'
 # Increment this number when network-protocol compatibility changes
 VERSION = 1
 
+# Port to start listening/scanning at
+DEFAULT_PORT = 7115
+
 # Primary node class
 class Node
 
   attr_accessor :listen_port
   attr_accessor :serv_sock
+  attr_accessor :connections
 
   def initialize
     super
     
-    self.listen_port = 7115
+    self.listen_port = DEFAULT_PORT
 
     while self.listen_port < 65536
       begin
@@ -36,10 +40,26 @@ class Node
     end
   end
 
-  def start
-    result = select([self.serv_sock], nil, nil, nil)
+  def connect_other_nodes
+    self.connections = []
+    DEFAULT_PORT.upto(self.listen_port - 1).each do |p|
+      sock = TCPSocket.new('localhost', p)
+      self.connections << sock
+      puts "Connected on port #{p}"
+    end
+  end
+
+  def run
+    self.connect_other_nodes
+
+    loop do
+      Thread.start(self.serv_sock.accept) do |client|
+        self.connections << client
+        puts "Accepted connection from client"
+      end
+    end
   end
 
 end
 
-Node.new.start
+Node.new.run
