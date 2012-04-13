@@ -44,6 +44,14 @@ The state of the art with respect to Paxos continued to advance in the past deca
 
 Beyond these three major advancements, several other similar extensions have been published to Paxos -- primarily with the aid or from the direct efforts of Lamport -- that address a variety of other issues in the algorithm, such as the Byzantine problem that appears consistently in the works above. Furthermore, papers from other researchers provide a number of details that are missing in the core descriptions, including providing a number of leader selection algorithms and further fleshing out implementation issues from e.g. the Fast Paxos work.
 
+\section{Production Use}
+
+Paxos has been implemented in a few production environments, where consistency between distributed nodes is critical. The following are some of the companies that utilize Paxos in thier business.
+
+Google uses Paxos in Chubby, their distributed lock service, to maintain consistency between replicas. Chubby is used in Bigtable, Google's high performance database system. Since Bigtable is used in many Google products, including Google Reader, Google Maps, Google Earth, Blogger.com, YouTube, and Gmail, Google's implementation of Paxos provides a lot of value to their business.
+
+Microsoft uses Paxos for their Bing Autopilot software. Autopilot manages Bing's server clusters, and uses Paxos to maintain consistency in state between individual machines in the cluster. Because machine state is used to automatically reboot, reimage, and repair machines, Paxos provides a critical service in Autopilot by guaranteeing that machine states are consistent accross Autopilot nodes.
+
 \section{Project Goals}
 
 With a further understanding of the current state of the research surrounding the Paxos algorithm, the team reiterates its confidence in its original goals: to create a working implementation of the original Paxos implementation described in \cite{paxos} and \cite{simple-paxos}. The technical choices -- Ruby 1.9, Mac/Linux compatibility -- remain the same as in Milestone 1.
