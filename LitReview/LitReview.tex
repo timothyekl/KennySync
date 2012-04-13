@@ -1,0 +1,58 @@
+\documentclass{article}
+
+\usepackage{fancyhdr}
+\usepackage[colorlinks=true]{hyperref}
+\usepackage{mdwlist}
+
+\pagestyle{fancy}
+\headheight 35pt
+\headsep 16pt
+\begin{document}
+
+\lhead{\textbf{Milestone 2} \\ CSSE 433}
+\rhead{Will Anderson \\ Tim Ekl \\ Eric Reed}
+
+\section{What is Paxos?}
+
+Paxos, originally described in 1998 by Leslie Lamport \cite{paxos}, is a distributed fault-tolerant algorithm for consistency in decision-making. It is applied in the context of this project to ensure consistent behavior across a number of networked processes implemented as Ruby programs; the project aims to use these nodes to manage a common data store that is resilient in the face of node failure and other potential issues.
+
+This document aims to describe the current research work done on Paxos, ranging from its original introduction to much more recent adaptations to different conditions or needs. It also includes a brief summary of project goals, earlier discussed in Milestone 1, and a plan for moving forward with implementation through project completion (Milestone 3).
+
+\section{The Part-Time Parliament: Original Paxos}
+
+In 1998, Leslie Lamport released an extensive research paper detailing the ``parliamentary form of government'' on the Aegean island of Paxos. Though the island exists, Lamport's purported governance system is fiction, serving only as a storytelling framework for describing his new algorithm, colloquially also known as ``Paxos.''
+
+In this original paper, Lamport uses the metaphor of a group of parlamentarians passing ``decrees'' for the island to represent multiple processes attempting to reach consensus on individually numbered facts. Though the algorithm is thoroughly described, Lamport made frequent reference to ``translation'' of the original ``Paxon'' language and frequently used Greek names in examples; as such, this early work was ill-received by other researchers, with Lamport later joking that the ``original presentation was Greek to many readers'' \cite{simple-paxos}.
+
+As such, Lamport later boiled the entire algorithm down to a ``simple English'' explanation, completely describing the process in about ten pages. This work provided no novel adaptations to the original 1998 paper, but instead simplified the description and removed references to a fictive Greek society, launching Paxos into wider acceptance and study.
+
+The algorithm described in these two papers is characterized by Lamport as a state machine. Individual processes communicate with each other to \textit{prepare}, \textit{propose}, \textit{accept}, and \textit{learn} about different values. Each node plays all roles in the process, exchanging all messages with its neighbor nodes; in addition, a single node is elected as a ``distinguished'' node, playing a few special roles in the process.
+
+%TODO this is still pretty vague. Do we actually need to replicate a (simplified) description of the full algorithm here?
+
+Notable in this initial description is guaranteed safety of the algorithm under all assumed conditions, even in the situation where a distinguished learner or proposer cannot be elected (as the election mechanism is out of the scope of the original paper). Furthermore, if the election succeeds reliably, the protocol also guarantees ``progress:'' individual values are guaranteed to be learned by all nodes if a majority agree with the distinguished proposer. Also of note in the 1998 work and its simplification are a few things that are distinctly lacking: the papers assume that all nodes cooperate (i.e. there are no Byzantine conditions), and Lamport makes no guarantees about runtime or efficiency, though he does describe a sample implementation.
+
+\subsection{Improvements: Cheap, Fast, and Generalized}
+
+The state of the art with respect to Paxos continued to advance in the past decade, with Lamport continuing to do significant work on his algorithm through his role at Microsoft. A few major improvements were advanced in this time:
+
+\begin{itemize}
+\item \textbf{Cheap} Paxos, which upholds the consistency guarantee of original Paxos but uses fewer processors to actually execute the system. Any such algorithm requires $2F + 1$ processors to continue the system in the face of $F$ failures; Cheap Paxos guarantees that the original Paxos algorithm will make progress (something of a special result in the original description) using only $F + 1$ processors, so long as the set of $F$ ``failed'' processors does not vary too quickly. (The paper makes reference to this assumption as an ``amoeba'' condition, where the boundaries of the active process moves slowly across the entire set of $2F + 1$ processors \cite{cheap-paxos}.)
+\item \textbf{Fast} Paxos, which reduces the total number of messages passed for any value $v$ to be selected from 3 to 2. It does so by making a slight modification to an intermediate phase of the original algorithm: in phase 2a (response to prepare) of Paxos, nodes supporting Fast Paxos will never vote for a value other than $v$ (the proposed value), even under conditions where the original algorithm allows such value-changing votes. This extension continues to guarantee progress with an elected leader, though it continues to defer the topic of selecting such a leader. This paper also discusses ways to remove nondeterminism from the algorithm extension, and references further work to defeat Byzantine failures, though it goes into no specifics on this last \cite{fast-paxos}.
+\item \textbf{Generalized} Paxos, which presents a mathematical abstraction of Paxos and Paxos-like algorithms to guarantee that non-interfering concurrent communications are both accepted (using a partial ordering on those communications) and thus allowing quicker acceptance of values in the general case. This work introduces the concept of ``command structs,'' which help define the issue of generalized consensus. It remains a requirement that nodes are non-Byzantine, and continues to avoid leader selection algorithms \cite{generalized-paxos}.
+\end{itemize}
+
+Beyond these three major advancements, several other similar extensions have been published to Paxos -- primarily with the aid or from the direct efforts of Lamport -- that address a variety of other issues in the algorithm, such as the Byzantine problem that appears consistently in the works above. Furthermore, papers from other researchers provide a number of details that are missing in the core descriptions, including providing a number of leader selection algorithms and further fleshing out implementation issues from e.g. the Fast Paxos work.
+
+\section{Project Goals}
+
+With a further understanding of the current state of the research surrounding the Paxos algorithm, the team reiterates its confidence in its original goals: to create a working implementation of the original Paxos implementation described in \cite{paxos} and \cite{simple-paxos}. The technical choices -- Ruby 1.9, Mac/Linux compatibility -- remain the same as in Milestone 1.
+
+As described in the original project proposal, the various extensions to Paxos each address specific use cases and needs that the team does not expect to encounter. Given this, implementing extensions to the basic Paxos algorithm remain ``stretch'' or optional goals, to be implemented only as time permits. If necessary, the team may also choose to do further research (e.g. into the Byzantine algorithm extensions) to obtain information as needed to complete the basic implementation and simulation goals.
+
+Overall, emphasis will be placed not on expanding the Paxos algorithm, but on creating a comprehensive (and comprehensible) simulation of classic Paxos that contributes to class understanding and potential usefulness. This overarching goal will drive future work as the project begins its implementation phase.
+
+\bibliographystyle{plain}
+\bibliography{LitReview}
+
+\end{document}
