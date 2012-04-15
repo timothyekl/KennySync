@@ -18,7 +18,7 @@ class KennySync < EventMachine::Connection
   def post_init
     $connections << self
     self.log_event("connect (#{$connections.length} total)")
-    self.send_data("kennysync\n")
+    self.send_data(SyncMessage.new.to_sendable)
   end
 
   def receive_data(data)
@@ -33,7 +33,7 @@ class KennySync < EventMachine::Connection
       self.validated = true
       self.log_event("validate")
     else
-      self.send_data("Parsed message of type: #{msg.type.to_s}")
+      self.send_data("Parsed message of type: #{msg.type.to_s}\n")
       self.log_event("message (#{msg.type.to_s})")
     end
   end

@@ -16,6 +16,10 @@ class Message
     return "#{self.type.to_s} #{self.id} #{self.value}"
   end
 
+  def to_sendable
+    return self.to_s + "\n"
+  end
+
   def self.parse(str)
     parts = str.split
 
