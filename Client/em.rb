@@ -37,7 +37,18 @@ class KennySync < EventMachine::Connection
 
 end
 
+START_PORT = 7115
+
 EventMachine::run {
-  EventMachine::start_server("127.0.0.1", 8081, KennySync)
-  puts "Listening on port 8081"
+  port = START_PORT
+  listening = false
+  while not listening and port < 65536
+    begin
+      EventMachine::start_server("127.0.0.1", port, KennySync)
+      listening = true
+    rescue
+      port += 1
+    end
+  end
+  puts "Listening on port #{port}"
 }
