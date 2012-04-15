@@ -4,6 +4,8 @@ require 'eventmachine'
 require 'pp'
 require 'socket'
 
+$connections = []
+
 class KennySync < EventMachine::Connection
 
   attr_accessor :port
@@ -14,7 +16,8 @@ class KennySync < EventMachine::Connection
   # EventMachine methods
   #
   def post_init
-    self.log_event("connect")
+    $connections << self
+    self.log_event("connect (#{$connections.length} total)")
     self.send_data("kennysync\n")
   end
 
@@ -29,7 +32,8 @@ class KennySync < EventMachine::Connection
   end
 
   def unbind
-    self.log_event("disconnect")
+    $connections.delete(self)
+    self.log_event("disconnect (#{$connections.length} total)")
   end
 
   #
