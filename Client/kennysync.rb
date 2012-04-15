@@ -2,6 +2,8 @@ require 'eventmachine'
 require 'pp'
 require 'socket'
 
+require './messages.rb'
+
 $connections = []
 
 class KennySync < EventMachine::Connection
@@ -20,12 +22,19 @@ class KennySync < EventMachine::Connection
   end
 
   def receive_data(data)
-    if data =~ /kennysync/
+    msg = Message.parse(data)
+    if msg.nil?
+      self.log_event("ill-formed message: #{data}")
+      return
+    end
+
+    case msg.type
+    when :kennysync
       self.validated = true
       self.log_event("validate")
     else
-      self.send_data("Got data: #{data}")
-      self.log_event("data: #{data}")
+      self.send_data("Parsed message of type: #{msg.type.to_s}")
+      self.log_event("message (#{msg.type.to_s})")
     end
   end
 
