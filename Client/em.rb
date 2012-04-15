@@ -35,10 +35,11 @@ class KennySync < EventMachine::Connection
   #
   # Helpers
   #
-
   def populate_variables
     if self.port.nil? or self.ip.nil?
-      self.port, self.ip = Socket.unpack_sockaddr_in(self.get_peername())
+      if !self.get_peername().nil?
+        self.port, self.ip = Socket.unpack_sockaddr_in(self.get_peername())
+      end
     end
 
     if self.validated.nil?
@@ -50,7 +51,9 @@ class KennySync < EventMachine::Connection
     self.populate_variables
 
     vstr = self.validated ? "+" : " "
-    puts "[#{vstr}#{self.ip}:#{self.port}] #{msg}"
+    ip = self.ip || "0.0.0.0"
+    port = self.port || "0"
+    puts "[#{vstr}#{ip}:#{port}] #{msg}"
   end
 
 end
@@ -58,15 +61,21 @@ end
 START_PORT = 7115
 
 EventMachine::run {
-  port = START_PORT
+  # First start the server
+  listen_port = START_PORT
   listening = false
-  while not listening and port < 65536
+  while not listening and listen_port < 65536
     begin
-      EventMachine::start_server("127.0.0.1", port, KennySync)
+      EventMachine::start_server("127.0.0.1", listen_port, KennySync)
       listening = true
     rescue
-      port += 1
+      listen_port += 1
     end
   end
-  puts "Listening on port #{port}"
+  puts "Listening on port #{listen_port}"
+
+  # Now connect to other nodes
+  START_PORT.upto(listen_port - 1).each do |port|
+    EventMachine::connect("127.0.0.1", port, KennySync)
+  end
 }
