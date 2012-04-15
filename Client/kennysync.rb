@@ -32,6 +32,13 @@ class KennySync < EventMachine::Connection
     when :kennysync
       self.validated = true
       self.log_event("validate")
+    when :info
+      self.log_event("info: #{msg.value}")
+    when :broadcast
+      self.log_event("broadcast: #{msg.value}")
+      $connections.each do |conn|
+        conn.send_data(InfoMessage.new(msg.value).to_sendable)
+      end
     else
       self.send_data("Parsed message of type: #{msg.type.to_s}\n")
       self.log_event("message (#{msg.type.to_s})")

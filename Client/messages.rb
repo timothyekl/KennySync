@@ -46,7 +46,6 @@ class Message
 end
 
 class SyncMessage < Message
-
   def initialize
     super(:kennysync, nil, nil)
   end
@@ -54,5 +53,16 @@ class SyncMessage < Message
   def to_s
     return "kennysync"
   end
+end
 
+class InfoMessage < Message
+  def initialize(msg)
+    super(:info, 0, msg)
+  end
+end
+
+class BroadcastMessage < Message
+  def initialize(msg)
+    super(:broadcast, 0, msg)
+  end
 end
