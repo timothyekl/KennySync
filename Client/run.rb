@@ -1,4 +1,9 @@
 #!/usr/bin/env ruby
+#
+# This file is the main launcher for KennySync, a Ruby implementation
+# of the Paxos conflict-resolution protocol.
+#
+# Dedicated, as always, to Kenny.
 
 require 'eventmachine'
 require './kennysync.rb'
