@@ -6,9 +6,31 @@
 # Dedicated, as always, to Kenny.
 
 require 'eventmachine'
+require 'logger'
+require 'optparse'
+
 require './kennysync.rb'
 
 START_PORT = 7115
+
+$log = Logger.new(STDOUT)
+$log.formatter = proc do |severity, datetime, progname, msg|
+  "[#{progname}] #{msg}\n"
+end
+
+options = {:log_level => :info}
+OptionParser.new do |opts|
+  opts.banner = "Usage: run.rb [options]"
+
+  opts.on("-d", "--debug-level LEVEL", [:fatal, :error, :warn, :info, :debug], "Logging threshold") do |d|
+    options[:log_level] = d
+  end
+end.parse!
+$log.level = {:fatal => Logger::FATAL,
+              :error => Logger::ERROR,
+              :warn => Logger::WARN,
+              :info => Logger::INFO,
+              :debug => Logger::DEBUG}[options[:log_level]]
 
 EventMachine::run {
   # First start the server
@@ -22,7 +44,7 @@ EventMachine::run {
       listen_port += 1
     end
   end
-  puts "Listening on port #{listen_port}"
+  $log.info('general') { "Listening on port #{listen_port}" }
 
   # Now connect to other nodes
   START_PORT.upto(listen_port - 1).each do |port|

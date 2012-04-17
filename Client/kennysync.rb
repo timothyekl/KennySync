@@ -65,13 +65,13 @@ class KennySync < EventMachine::Connection
     end
   end
 
-  def log_event(msg)
+  def log_event(msg, lvl = Logger::INFO)
     self.populate_variables
 
     vstr = self.validated ? "+" : " "
     ip = self.ip || "0.0.0.0"
     port = self.port || "0"
-    puts "[#{vstr}#{ip}:#{port}] #{msg}"
+    $log.add(lvl, nil, "#{vstr}#{ip}:#{port}") { msg }
   end
 
 end
