@@ -38,9 +38,18 @@ class Message
     case type
     when :kennysync
       return SyncMessage.new
+    when :info
+      return InfoMessage.new(value)
+    when :broadcast
+      return BroadcastMessage.new(value)
     else
       return Message.new(type, id, value)
     end
+  end
+
+  def on_receive(conn)
+    conn.send_data("Parsed message of type: #{self.type.to_s}\n")
+    conn.log_event("message (#{self.type.to_s})")
   end
 
 end
@@ -53,16 +62,32 @@ class SyncMessage < Message
   def to_s
     return "kennysync"
   end
+
+  def on_receive(conn)
+    conn.validated = true
+    conn.log_event("validate")
+  end
 end
 
 class InfoMessage < Message
   def initialize(msg)
     super(:info, 0, msg)
   end
+
+  def on_receive(conn)
+    conn.log_event("info: #{self.value}")
+  end
 end
 
 class BroadcastMessage < Message
   def initialize(msg)
     super(:broadcast, 0, msg)
+  end
+
+  def on_receive(conn)
+    conn.log_event("broadcast: #{self.value}")
+    $connections.each do |conn2|
+      conn2.send_data(InfoMessage.new(self.value).to_sendable)
+    end
   end
 end
