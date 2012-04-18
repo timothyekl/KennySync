@@ -5,6 +5,9 @@ require 'socket'
 require './messages.rb'
 
 $connections = []
+$highestAccepted = nil
+$highestPromised = nil
+$numPromiseReponses = 0
 
 class KennySync < EventMachine::Connection
 
