@@ -21,6 +21,14 @@ class Message
   end
 
   def self.parse(str)
+    clsmap = {:kennysync => [SyncMessage, []],
+              :info => [InfoMessage, [:value]],
+              :broadcast => [BroadcastMessage, [:value]],
+              :prepare => [PrepareMessage, [:value, :id]],
+              :promise => [PromiseMessage, [:id, :value]],
+              :acceptrequest => [AcceptRequestMessage, [:id, :value]],
+              :accepted => [AcceptedMessage, [:id, :value]]}
+
     parts = str.split
 
     if parts.length == 0
@@ -28,31 +36,15 @@ class Message
     end
 
     type = parts[0].to_sym
+    args = {}
     if parts.length > 1
-      id = parts[1].to_i
+      args[:id] = parts[1].to_i
     end
     if parts.length > 2
-      value = parts[2..-1].join(" ")
+      args[:value] = parts[2..-1].join(" ")
     end
 
-    case type
-    when :kennysync
-      return SyncMessage.new
-    when :info
-      return InfoMessage.new(value)
-    when :broadcast
-      return BroadcastMessage.new(value)
-    when :prepare
-      return PrepareMessage.new(value, id)
-    when :promise
-      return PromiseMessage.new(id, value)
-    when :acceptrequest
-      return AcceptRequestMessage.new(id, value)
-    when :accepted
-      return AcceptedMessage.new(id, value)
-    else
-      return Message.new(type, id, value)
-    end
+    return clsmap[type][0].new(*(clsmap[type][1].map{|s| args[s]}))
   end
 
   def on_receive(conn)
