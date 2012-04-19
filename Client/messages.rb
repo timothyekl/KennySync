@@ -147,9 +147,9 @@ class PromiseMessage < Message
     conn.log_event("promise: #{self.to_s}")
     if self.id == $currentProposalID
       conn.log_event("promise recorded for #{self.id} with value #{self.value}")
-      acceptances.push [self.value] # note that here value is [id,val] or nil (highest accepted)
-      if acceptances.size >= $connections.size.to_f / 2
-        bestVal = acceptances.max_by {|x| x[0]} [1] # defaults to nil
+      $acceptances.push [self.value] # note that here value is [id,val] or nil (highest accepted)
+      if $acceptances.size >= $connections.size.to_f / 2
+        bestVal = $acceptances.max_by {|x| x[0]} [1] # defaults to nil
         conn.log_event("quorum reached for #{self.id} with value #{bestVal}")
         msg = AcceptRequestMessage.new($currentProposalID, bestVal)
         $connections.each {|conn2| conn2.send_data(msg.to_sendable)}
