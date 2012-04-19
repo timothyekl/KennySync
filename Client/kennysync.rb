@@ -6,8 +6,9 @@ require './messages.rb'
 
 $connections = []
 $highestAccepted = nil
-$highestPromised = nil
-$numPromiseReponses = 0
+$highestPromised = 0
+$acceptances = []
+$currentProposalID = nil
 
 class KennySync < EventMachine::Connection
 
