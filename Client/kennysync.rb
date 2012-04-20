@@ -64,3 +64,19 @@ class KennySync < EventMachine::Connection
   end
 
 end
+
+class KennyCommand < EventMachine::Connection
+
+  include EventMachine::Protocols::LineText2
+
+  def receive_line(data)
+    # Parse data into message
+    msg = Message.parse(data)
+
+    # Send message to all nodes
+    $connections.each do |conn|
+      conn.send_data msg.to_sendable
+    end
+  end
+
+end

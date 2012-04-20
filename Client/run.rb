@@ -53,4 +53,6 @@ EventMachine::run {
   START_PORT.upto(listen_port - 1).each do |port|
     EventMachine::connect("127.0.0.1", port, KennySync)
   end
+
+  EventMachine::open_keyboard(KennyCommand)
 }
