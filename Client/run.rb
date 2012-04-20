@@ -13,6 +13,9 @@ require './kennysync.rb'
 
 START_PORT = 7115
 
+STDIN.sync = true
+STDOUT.sync = true
+
 $log = Logger.new(STDOUT)
 $log.formatter = proc do |severity, datetime, progname, msg|
   "[#{progname}] #{msg}\n"
