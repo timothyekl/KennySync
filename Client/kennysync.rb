@@ -4,7 +4,11 @@ require 'socket'
 
 require './messages.rb'
 
+# Global object instances
 $connections = []
+$listeners = []
+
+# Paxos protocol info
 $highestAccepted = nil
 $highestPromised = 0
 $acceptances = []
@@ -21,22 +25,20 @@ class KennySync < EventMachine::Connection
   #
   def post_init
     $connections << self
-    self.log_event("connect (#{$connections.length} total)")
+    self.dispatch_event(:on_connect, [self])
     self.send_data(SyncMessage.new.to_sendable)
   end
 
   def receive_data(data)
-    msg = Message.parse(data)
-    if msg.nil?
-      self.log_event("ill-formed message: #{data}")
-      return
-    end
-    msg.on_receive(self)
+    msg = Message.parse(data, self)
+    self.dispatch_event(:on_message, [msg])
+    return if msg.nil?
+    msg.on_receive()
   end
 
   def unbind
     $connections.delete(self)
-    self.log_event("disconnect (#{$connections.length} total)")
+    self.dispatch_event(:on_disconnect, [self])
   end
 
   #
@@ -54,13 +56,12 @@ class KennySync < EventMachine::Connection
     end
   end
 
-  def log_event(msg, lvl = Logger::INFO)
-    self.populate_variables
-
-    vstr = self.validated ? "+" : " "
-    ip = self.ip || "0.0.0.0"
-    port = self.port || "0"
-    $log.add(lvl, nil, "#{vstr}#{ip}:#{port}") { msg }
+  def dispatch_event(evt, args)
+    $listeners.each do |listener|
+      if listener.respond_to? evt
+        listener.send(evt, *args)
+      end
+    end
   end
 
 end

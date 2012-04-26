@@ -10,6 +10,7 @@ require 'logger'
 require 'optparse'
 
 require './kennysync.rb'
+require './listeners/log.rb'
 
 START_PORT = 7115
 
@@ -22,19 +23,26 @@ OptionParser.new do |opts|
   end
 
   opts.on("-l", "--log FILE", "Log file") do |f|
-    options[:log_file] = f
+    if f == "stdout"
+      options[:log_file] = STDOUT
+    else
+      options[:log_file] = f
+    end
   end
 end.parse!
 
-$log = Logger.new(options[:log_file])
-$log.formatter = proc do |severity, datetime, progname, msg|
+log = Logger.new(options[:log_file])
+log.formatter = proc do |severity, datetime, progname, msg|
   "[#{progname}] #{msg}\n"
 end
-$log.level = {:fatal => Logger::FATAL,
+log.level = {:fatal => Logger::FATAL,
               :error => Logger::ERROR,
               :warn => Logger::WARN,
               :info => Logger::INFO,
               :debug => Logger::DEBUG}[options[:log_level]]
+
+log_listener = LogListener.new(log)
+$listeners << log_listener
 
 EventMachine::run {
   # First start the server
@@ -48,7 +56,7 @@ EventMachine::run {
       listen_port += 1
     end
   end
-  $log.info('general') { "Listening on port #{listen_port}" }
+  log.info('general') { "Listening on port #{listen_port}" }
   
   # Each node needs a unique identifer. We're using the port number as a cheap hack.
   $nodeID = listen_port
