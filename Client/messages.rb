@@ -109,7 +109,10 @@ class BroadcastMessage < Message
   end
 end
 
+#
 # Paxos messages
+#
+
 class PrepareMessage < Message
   def initialize(msg, id = 0, conn = nil)
     if id == 0
@@ -128,6 +131,7 @@ class PrepareMessage < Message
   # then make this the new promise and respond with such.
   def on_receive
     if self.id > $highestPromised
+      self.conn.dispatch_event(:on_state_change, "promise granted for #{self.id}")
       $highestPromised = self.id
       msg = PromiseMessage.new(self.id, $highestAccepted).to_sendable
       self.conn.send_data(msg)
@@ -135,12 +139,7 @@ class PrepareMessage < Message
   end
 
   def log_msg
-    result = []
-
-    result << "prepare: #{self.to_s}"
-    result << "promise granted for #{self.id}" if self.id > $highestPromised
-
-    return result
+    return "prepare: #{self.to_s}"
   end
 end
 
@@ -158,9 +157,11 @@ class PromiseMessage < Message
   # Otherwise, we can set it to anything.
   def on_receive
     if self.id == $currentProposalID
+      self.conn.dispatch_event(:on_state_change, "promise recorded for #{self.id} with value #{self.value}")
       $acceptances.push [self.value] # note that here value is [id,val] or nil (highest accepted)
       if $acceptances.size > $connections.size.to_f / 2
         bestVal = $acceptances.max_by {|x| x[0]} [1] # defaults to nil
+        self.conn.dispatch_event(:on_state_change, "quorum reached for #{self.id} with value #{bestVal}")
         msg = AcceptRequestMessage.new($currentProposalID, bestVal)
         $connections.each {|c| c.send_data(msg.to_sendable)}
       end
@@ -168,16 +169,7 @@ class PromiseMessage < Message
   end
 
   def log_msg
-    result = []
-
-    result << "promise: #{self.to_s}"
-
-    if self.id == $currentProposalID
-      result << "promise recorded for #{self.id} with value #{self.value}"
-      result << "quorum reached for #{self.id} with value #{bestVal}" if $acceptances.size > $connections.size.to_f / 2
-    end
-
-    return result
+    return "promise: #{self.to_s}"
   end
 end
 
@@ -192,6 +184,7 @@ class AcceptRequestMessage < Message
   # to the Proposer and every Learner.
   def on_receive
     if self.id >= $highestPromised
+      self.conn.dispatch_event(:on_state_change, "accept request granted for #{self.id} with value #{self.value}")
       $highestAccepted = [self.id, self.value]
       msg = AcceptedMessage.new(self.id, self.value)
       $connections.each {|c| c.send_data(msg.to_sendable)}
@@ -199,12 +192,7 @@ class AcceptRequestMessage < Message
   end
 
   def log_msg
-    result = []
-
-    result << "accept request: #{self.to_s}"
-    result << "accept request granted for #{self.id} with value #{self.value}" if self.id >= $highestPromised
-
-    return result
+    return "accept request: #{self.to_s}"
   end
 end
 

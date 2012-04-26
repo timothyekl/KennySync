@@ -24,17 +24,11 @@ class LogListener
   end
 
   def on_message(message)
-    to_log = message.log_msg
+    self.log_event(message.log_msg, message.conn)
+  end
 
-    if to_log.respond_to?(:each)
-
-      to_log.each do |m|
-        self.log_event(m, message.conn)
-      end
-
-    else
-      self.log_event(to_log, message.conn)
-    end
+  def on_state_change(description)
+    self.log_event(description)
   end
 
   def on_disconnect(conn)
@@ -43,7 +37,7 @@ class LogListener
 
   def log_event(msg, conn = nil, lvl = Logger::INFO)
     if conn.nil?
-      self.log.add(lvl, nil, "unknown") { msg }
+      self.log.add(lvl, nil, "general") { msg }
     else
       conn.populate_variables
       vstr = conn.validated ? "+" : " "
