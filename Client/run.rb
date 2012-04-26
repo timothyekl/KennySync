@@ -13,11 +13,6 @@ require './kennysync.rb'
 
 START_PORT = 7115
 
-$log = Logger.new(STDOUT)
-$log.formatter = proc do |severity, datetime, progname, msg|
-  "[#{progname}] #{msg}\n"
-end
-
 options = {:log_level => :info}
 OptionParser.new do |opts|
   opts.banner = "Usage: run.rb [options]"
@@ -25,7 +20,16 @@ OptionParser.new do |opts|
   opts.on("-d", "--debug-level LEVEL", [:fatal, :error, :warn, :info, :debug], "Logging threshold") do |d|
     options[:log_level] = d
   end
+
+  opts.on("-l", "--log FILE", "Log file") do |f|
+    options[:log_file] = f
+  end
 end.parse!
+
+$log = Logger.new(options[:log_file])
+$log.formatter = proc do |severity, datetime, progname, msg|
+  "[#{progname}] #{msg}\n"
+end
 $log.level = {:fatal => Logger::FATAL,
               :error => Logger::ERROR,
               :warn => Logger::WARN,
