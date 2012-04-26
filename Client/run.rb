@@ -10,7 +10,9 @@ require 'logger'
 require 'optparse'
 
 require './kennysync.rb'
-require './listeners/log.rb'
+Dir['./listeners/*.rb'].each do |l|
+  require l
+end
 
 START_PORT = 7115
 
@@ -43,7 +45,13 @@ log_listener = LogListener.new(options[:log_file], options[:log_level])
 $listeners << log_listener
 
 EventMachine::run {
-  # First start the server
+  # Must start visualizing listener inside EM reactor
+  if !options[:visualization].nil?
+    visual_listener = VisualizingListener.new(options[:visualization])
+    $listeners << visual_listener
+  end
+
+  # Start the server
   listen_port = START_PORT
   listening = false
   while not listening and listen_port < 65536
