@@ -29,19 +29,17 @@ OptionParser.new do |opts|
       options[:log_file] = f
     end
   end
+
+  opts.on("-V", "--visualization [STREAM]", "Visualize activity") do |v|
+    if v == "stdout"
+      options[:visualization] = STDOUT
+    else
+      options[:visualization] = v
+    end
+  end
 end.parse!
 
-log = Logger.new(options[:log_file])
-log.formatter = proc do |severity, datetime, progname, msg|
-  "[#{progname}] #{msg}\n"
-end
-log.level = {:fatal => Logger::FATAL,
-              :error => Logger::ERROR,
-              :warn => Logger::WARN,
-              :info => Logger::INFO,
-              :debug => Logger::DEBUG}[options[:log_level]]
-
-log_listener = LogListener.new(log)
+log_listener = LogListener.new(options[:log_file], options[:log_level])
 $listeners << log_listener
 
 EventMachine::run {
@@ -56,7 +54,9 @@ EventMachine::run {
       listen_port += 1
     end
   end
-  log.info('general') { "Listening on port #{listen_port}" }
+
+  # Kind of a hack, but we want to unconditionally log listen port
+  log_listener.log.info('general') { "Listening on port #{listen_port}" }
   
   # Each node needs a unique identifer. We're using the port number as a cheap hack.
   $nodeID = listen_port

@@ -5,8 +5,18 @@ class LogListener
   
   attr_accessor :log
 
-  def initialize(logger)
-    self.log = logger
+  def initialize(stream, threshold)
+    log = Logger.new(stream)
+    log.formatter = proc do |severity, datetime, progname, msg|
+      "[#{progname}] #{msg}\n"
+    end
+    log.level = {:fatal => Logger::FATAL,
+                  :error => Logger::ERROR,
+                  :warn => Logger::WARN,
+                  :info => Logger::INFO,
+                  :debug => Logger::DEBUG}[threshold]
+
+    self.log = log
   end
 
   def on_connect(conn)
