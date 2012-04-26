@@ -104,7 +104,7 @@ class PrepareMessage < Message
     end
     super(:prepare, id, msg)
     $currentProposalID = id
-    $acceptances = []
+    $acceptances = [[0,msg]]
   end
 
   # If this message has a larger ID than the current highest promise,
@@ -136,7 +136,9 @@ class PromiseMessage < Message
     conn.log_event("promise: #{self.to_s}")
     if self.id == $currentProposalID
       conn.log_event("promise recorded for #{self.id} with value #{self.value}")
-      $acceptances.push [self.value] # note that here value is [id,val] or nil (highest accepted)
+      if not self.value.nil?
+        $acceptances.push(eval(self.value)) # self.value is of the form [id,val]
+      end
       if $acceptances.size > $connections.size.to_f / 2
         bestVal = $acceptances.max_by {|x| x[0]} [1] # defaults to nil
         conn.log_event("quorum reached for #{self.id} with value #{bestVal}")
