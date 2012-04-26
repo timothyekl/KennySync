@@ -115,10 +115,7 @@ class PrepareMessage < Message
       conn.log_event("promise granted for #{self.id}")
       $highestPromised = self.id
       msg = PromiseMessage.new(self.id, $highestAccepted).to_sendable
-#      conn.log_event("message created and serialized")
-      #conn.send(PromiseMessage.new(self.id, $highestAccepted).to_sendable)
       conn.send_data(msg)
-#      conn.log_event("promise message sent")
     end
   end
 end
@@ -140,7 +137,7 @@ class PromiseMessage < Message
     if self.id == $currentProposalID
       conn.log_event("promise recorded for #{self.id} with value #{self.value}")
       $acceptances.push [self.value] # note that here value is [id,val] or nil (highest accepted)
-      if $acceptances.size >= $connections.size.to_f / 2
+      if $acceptances.size > $connections.size.to_f / 2
         bestVal = $acceptances.max_by {|x| x[0]} [1] # defaults to nil
         conn.log_event("quorum reached for #{self.id} with value #{bestVal}")
         msg = AcceptRequestMessage.new($currentProposalID, bestVal)
