@@ -37,8 +37,8 @@ class KennySync < EventMachine::Connection
   end
 
   def unbind
-    $connections.delete(self)
     self.dispatch_event(:on_disconnect, [self])
+    $connections.delete(self)
   end
 
   #

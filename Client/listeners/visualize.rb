@@ -10,13 +10,34 @@ class VisualizingListener
     self.buffer = []
 
     EventMachine::PeriodicTimer.new(1) do
-      self.log.info { self.log_line }
+      self.log.info { self.space_line(["|"] * ($connections.length + 1)) }
     end
   end
 
+  # listener methods
+
+  def on_connect(conn)
+    self.log.info { self.space_line(["|"] * $connections.length + ["+"]) }
+  end
+
+  def on_disconnect(conn)
+    idx = $connections.index(conn)
+
+    self.log.info { self.space_line(["|"] * (idx + 1) + ["X"] + ["|"] * ($connections.length - idx - 1)) }
+
+    if idx != $connections.length - 1
+      # Extended disconnect - transition other lines in
+      ["  /", " /", "/"].each do |sym|
+        self.log.info { self.space_line(["|"] * (idx + 1) + [sym] + ["/"] * ($connections.length - idx - 2)) }
+      end
+    end
+  end
+
+  # printing & format methods
+
   def log_line
     if self.buffer.empty?
-      return self.space_line(["|"] * ($connections.length + 1))
+      return 
     end
   end
 
