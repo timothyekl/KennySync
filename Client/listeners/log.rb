@@ -27,8 +27,8 @@ class LogListener
     self.log_event(message.log_msg, message.conn)
   end
 
-  def on_state_change(description)
-    self.log_event(description)
+  def on_state_change(description, conn)
+    self.log_event(description, conn)
   end
 
   def on_disconnect(conn)

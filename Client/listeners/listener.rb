@@ -9,6 +9,6 @@ module Listener
 
   def on_connect(conn) end
   def on_message(message) end
-  def on_state_change(description) end
+  def on_state_change(description, conn) end
   def on_disconnect(conn) end
 end

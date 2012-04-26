@@ -59,6 +59,10 @@ class Message
     return "message (#{self.type.to_s})"
   end
 
+  def state_changed(description)
+    self.conn.dispatch_event(:on_state_change, [description, self.conn])
+  end
+
 end
 
 class SyncMessage < Message
@@ -131,7 +135,7 @@ class PrepareMessage < Message
   # then make this the new promise and respond with such.
   def on_receive
     if self.id > $highestPromised
-      self.conn.dispatch_event(:on_state_change, "promise granted for #{self.id}")
+      self.state_changed("promise granted for #{self.id}")
       $highestPromised = self.id
       msg = PromiseMessage.new(self.id, $highestAccepted).to_sendable
       self.conn.send_data(msg)
@@ -157,11 +161,11 @@ class PromiseMessage < Message
   # Otherwise, we can set it to anything.
   def on_receive
     if self.id == $currentProposalID
-      self.conn.dispatch_event(:on_state_change, "promise recorded for #{self.id} with value #{self.value}")
+      self.state_changed("promise recorded for #{self.id} with value #{self.value}")
       $acceptances.push [self.value] # note that here value is [id,val] or nil (highest accepted)
       if $acceptances.size > $connections.size.to_f / 2
         bestVal = $acceptances.max_by {|x| x[0]} [1] # defaults to nil
-        self.conn.dispatch_event(:on_state_change, "quorum reached for #{self.id} with value #{bestVal}")
+        self.state_changed("quorum reached for #{self.id} with value #{bestVal}")
         msg = AcceptRequestMessage.new($currentProposalID, bestVal)
         $connections.each {|c| c.send_data(msg.to_sendable)}
       end
@@ -184,7 +188,7 @@ class AcceptRequestMessage < Message
   # to the Proposer and every Learner.
   def on_receive
     if self.id >= $highestPromised
-      self.conn.dispatch_event(:on_state_change, "accept request granted for #{self.id} with value #{self.value}")
+      self.state_changed("accept request granted for #{self.id} with value #{self.value}")
       $highestAccepted = [self.id, self.value]
       msg = AcceptedMessage.new(self.id, self.value)
       $connections.each {|c| c.send_data(msg.to_sendable)}
