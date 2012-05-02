@@ -10,13 +10,11 @@ require 'logger'
 require 'optparse'
 
 require './kennysync.rb'
+Dir['./listeners/*.rb'].each do |l|
+  require l
+end
 
 START_PORT = 7115
-
-$log = Logger.new(STDOUT)
-$log.formatter = proc do |severity, datetime, progname, msg|
-  "[#{progname}] #{msg}\n"
-end
 
 options = {:log_level => :info}
 OptionParser.new do |opts|
@@ -25,15 +23,35 @@ OptionParser.new do |opts|
   opts.on("-d", "--debug-level LEVEL", [:fatal, :error, :warn, :info, :debug], "Logging threshold") do |d|
     options[:log_level] = d
   end
+
+  opts.on("-l", "--log FILE", "Log file") do |f|
+    if f == "stdout"
+      options[:log_file] = STDOUT
+    else
+      options[:log_file] = f
+    end
+  end
+
+  opts.on("-V", "--visualization [STREAM]", "Visualize activity") do |v|
+    if v == "stdout"
+      options[:visualization] = STDOUT
+    else
+      options[:visualization] = v
+    end
+  end
 end.parse!
-$log.level = {:fatal => Logger::FATAL,
-              :error => Logger::ERROR,
-              :warn => Logger::WARN,
-              :info => Logger::INFO,
-              :debug => Logger::DEBUG}[options[:log_level]]
+
+log_listener = LogListener.new(options[:log_file], options[:log_level])
+$listeners << log_listener
 
 EventMachine::run {
-  # First start the server
+  # Must start visualizing listener inside EM reactor
+  if !options[:visualization].nil?
+    visual_listener = VisualizingListener.new(options[:visualization])
+    $listeners << visual_listener
+  end
+
+  # Start the server
   listen_port = START_PORT
   listening = false
   while not listening and listen_port < 65536
@@ -44,7 +62,9 @@ EventMachine::run {
       listen_port += 1
     end
   end
-  $log.info('general') { "Listening on port #{listen_port}" }
+
+  # Kind of a hack, but we want to unconditionally log listen port
+  log_listener.log.info('general') { "Listening on port #{listen_port}" }
   
   # Each node needs a unique identifer. We're using the port number as a cheap hack.
   $nodeID = listen_port
