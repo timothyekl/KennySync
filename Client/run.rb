@@ -33,7 +33,7 @@ OptionParser.new do |opts|
   end
 
   opts.on("-V", "--visualization [STREAM]", "Visualize activity") do |v|
-    if v == "stdout"
+    if v.nil? || v == "stdout"
       options[:visualization] = STDOUT
     else
       options[:visualization] = v
