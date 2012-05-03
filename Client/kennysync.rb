@@ -12,7 +12,9 @@ $listeners = []
 $highestAccepted = nil
 $highestPromised = 0
 $acceptances = []
+$numAcceptances = 0
 $currentProposalID = nil
+$acceptedTracker = {}
 
 class KennySync < EventMachine::Connection
 

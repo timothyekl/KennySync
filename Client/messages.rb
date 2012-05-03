@@ -63,6 +63,11 @@ class Message
     self.conn.dispatch_event(:on_state_change, [description, self.conn])
   end
 
+  def has_learned
+    if $acceptedTracker[[self.id, self.value]] > $connections.size.to_f / 2
+      self.state_changed("learned the value of #{self.value} on id #{self.id}")
+    end
+  end
 end
 
 class SyncMessage < Message
@@ -132,6 +137,7 @@ class PrepareMessage < Message
     super(:prepare, id, msg, conn)
     $currentProposalID = id
     $acceptances = [[0,msg]]
+    $numAcceptances = 0
   end
 
   # If this message has a larger ID than the current highest promise,
@@ -166,11 +172,12 @@ class PromiseMessage < Message
   # Otherwise, we can set it to anything.
   def on_receive
     if self.id == $currentProposalID
+      $numAcceptances += 1
       if not self.value.nil?
         $acceptances.push(eval(self.value)) # self.value is of the form [id,val]
       end
       self.state_changed("promise recorded for #{self.id} with value #{self.value}")
-      if $acceptances.size > $connections.size.to_f / 2
+      if $numAcceptances > $connections.size.to_f / 2
         bestVal = $acceptances.max_by {|x| x[0]} [1] # defaults to nil
         self.state_changed("quorum reached for #{self.id} with value #{bestVal}")
         $connections.each do |c|
@@ -200,13 +207,20 @@ class AcceptRequestMessage < Message
   def on_receive
     if self.id >= $highestPromised
       self.state_changed("accept request granted for #{self.id} with value #{self.value}")
+      # record that we've accepted it
       $highestAccepted = [self.id, self.value]
+      if not $acceptedTracker.has_key?([self.id, self.value])
+        $acceptedTracker[[self.id, self.value]] = 1
+      else
+        $acceptedTracker[[self.id, self.value]] += 1
+      end
       $connections.each do |c|
         msg = AcceptedMessage.new(self.id, self.value)
         msg.conn = c
         c.send_data(msg.to_sendable)
         c.dispatch_event(:on_send, [msg])
       end
+      self.has_learned # we might be done
     end
   end
 
@@ -223,11 +237,17 @@ class AcceptedMessage < Message
   # If we receive an Accepted message then we act as a learner and do what the request says. 
   # (i.e. update or respond)
   def on_receive
-    # currently we don't actually do anything
-    # TODO this is where we'd add a backend
+    # record the receipt of this acceptance
+    if not $acceptedTracker.has_key?([self.id, self.value])
+      $acceptedTracker[[self.id, self.value]] = 1
+    else
+      $acceptedTracker[[self.id, self.value]] += 1
+    end
+    self.has_learned
   end
 
   def log_msg
     return "accepted: #{self.to_s}"
   end
 end
+
