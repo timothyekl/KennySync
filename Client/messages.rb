@@ -104,7 +104,9 @@ class BroadcastMessage < Message
 
   def on_receive
     $connections.each do |c|
-      c.send_data(InfoMessage.new(self.value).to_sendable)
+      msg = InfoMessage.new(self.value)
+      c.send_data(msg.to_sendable)
+      c.dispatch_event(:on_send, [msg])
     end
   end
 
@@ -137,8 +139,9 @@ class PrepareMessage < Message
     if self.id > $highestPromised
       self.state_changed("promise granted for #{self.id}")
       $highestPromised = self.id
-      msg = PromiseMessage.new(self.id, $highestAccepted).to_sendable
-      self.conn.send_data(msg)
+      msg = PromiseMessage.new(self.id, $highestAccepted)
+      self.conn.send_data(msg.to_sendable)
+      self.conn.dispatch_event(:on_send, [msg])
     end
   end
 
@@ -169,7 +172,10 @@ class PromiseMessage < Message
         bestVal = $acceptances.max_by {|x| x[0]} [1] # defaults to nil
         self.state_changed("quorum reached for #{self.id} with value #{bestVal}")
         msg = AcceptRequestMessage.new($currentProposalID, bestVal)
-        $connections.each {|c| c.send_data(msg.to_sendable)}
+        $connections.each do |c|
+          c.send_data(msg.to_sendable)
+          c.dispatch_event(:on_send, [msg])
+        end
       end
     end
   end
@@ -193,7 +199,10 @@ class AcceptRequestMessage < Message
       self.state_changed("accept request granted for #{self.id} with value #{self.value}")
       $highestAccepted = [self.id, self.value]
       msg = AcceptedMessage.new(self.id, self.value)
-      $connections.each {|c| c.send_data(msg.to_sendable)}
+      $connections.each do |c|
+        c.send_data(msg.to_sendable)
+        c.dispatch_event(:on_send, [msg])
+      end
     end
   end
 
