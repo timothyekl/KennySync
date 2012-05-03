@@ -31,7 +31,7 @@ class KennySync < EventMachine::Connection
 
   def receive_data(data)
     msg = Message.parse(data, self)
-    self.dispatch_event(:on_message, [msg])
+    self.dispatch_event(:on_receive, [msg])
     return if msg.nil?
     msg.on_receive()
   end

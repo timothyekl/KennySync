@@ -23,7 +23,11 @@ class LogListener
     self.log_event("connect (#{$connections.length} total)", conn)
   end
 
-  def on_message(message)
+  def on_receive(message)
+    self.log_event(message.log_msg, message.conn)
+  end
+
+  def on_send(message)
     self.log_event(message.log_msg, message.conn)
   end
 
