@@ -35,6 +35,24 @@ class VisualizingListener
     end
   end
 
+  def on_receive(message)
+    return if message.conn.nil?
+
+    idx = $connections.index(message.conn)
+    self.log.info { "|<-------" + ("---" * (idx)) + "|" + "  |" * ($connections.length - idx - 1) + "        " + message.log_msg }
+  end
+
+  def on_send(message)
+    return if message.conn.nil?
+
+    idx = $connections.index(message.conn)
+    self.log.info { "|-------" + ("---" * (idx)) + ">|" + "  |" * ($connections.length - idx - 1) + "        " + message.log_msg }
+  end
+
+  def on_state_change(description, conn)
+    self.log.info { self.space_line(["$"] + ["|"] * $connections.length) + "        " + description }
+  end
+
   # printing & format methods
 
   def log_line
