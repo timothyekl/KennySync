@@ -5,7 +5,6 @@ require 'socket'
 require './messages.rb'
 
 # Global object instances
-$connections = []
 $listeners = []
 
 # Paxos protocol info
@@ -26,7 +25,6 @@ class KennySync < EventMachine::Connection
   # EventMachine methods
   #
   def post_init
-    $connections << self
     self.dispatch_event(:on_connect, [self])
     self.send_data(SyncMessage.new.to_sendable)
   end
@@ -40,7 +38,6 @@ class KennySync < EventMachine::Connection
 
   def unbind
     self.dispatch_event(:on_disconnect, [self])
-    $connections.delete(self)
   end
 
   #
@@ -59,11 +56,19 @@ class KennySync < EventMachine::Connection
   end
 
   def dispatch_event(evt, args)
-    $listeners.each do |listener|
+    ($listeners + [$connector]).each do |listener|
       if listener.respond_to? evt
         listener.send(evt, *args)
       end
     end
+  end
+
+  def uuid
+    # The UUID of the machine on the other end
+    # TODO this should be something else
+    
+    self.populate_variables
+    return self.port
   end
 
 end
@@ -77,7 +82,7 @@ class KennyCommand < EventMachine::Connection
     msg = Message.parse(data)
 
     # Send message to all nodes
-    $connections.each do |conn|
+    $connector.each do |conn|
       conn.send_data msg.to_sendable
     end
   end

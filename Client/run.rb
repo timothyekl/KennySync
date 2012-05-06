@@ -45,6 +45,9 @@ log_listener = LogListener.new(options[:log_file], options[:log_level])
 $listeners << log_listener
 
 EventMachine::run {
+
+  $connector = Connector.new
+
   # Must start visualizing listener inside EM reactor
   if !options[:visualization].nil?
     visual_listener = VisualizingListener.new(options[:visualization])

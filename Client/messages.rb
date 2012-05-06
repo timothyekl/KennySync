@@ -64,7 +64,7 @@ class Message
   end
 
   def has_learned
-    if $acceptedTracker[[self.id, self.value]] > $connections.size.to_f / 2
+    if $acceptedTracker[[self.id, self.value]] > $connector.size.to_f / 2
       self.state_changed("learned the value of #{self.value} on id #{self.id}")
     end
   end
@@ -108,7 +108,7 @@ class BroadcastMessage < Message
   end
 
   def on_receive
-    $connections.each do |c|
+    $connector.each do |c|
       msg = InfoMessage.new(self.value)
       msg.conn = c
       c.send_data(msg.to_sendable)
@@ -177,10 +177,10 @@ class PromiseMessage < Message
         $acceptances.push(eval(self.value)) # self.value is of the form [id,val]
       end
       self.state_changed("promise recorded for #{self.id} with value #{self.value}")
-      if $numAcceptances > $connections.size.to_f / 2
+      if $numAcceptances > $connector.size.to_f / 2
         bestVal = $acceptances.max_by {|x| x[0]} [1] # defaults to nil
         self.state_changed("quorum reached for #{self.id} with value #{bestVal}")
-        $connections.each do |c|
+        $connector.each do |c|
           msg = AcceptRequestMessage.new($currentProposalID, bestVal)
           msg.conn = c
           c.send_data(msg.to_sendable)
@@ -214,7 +214,7 @@ class AcceptRequestMessage < Message
       else
         $acceptedTracker[[self.id, self.value]] += 1
       end
-      $connections.each do |c|
+      $connector.each do |c|
         msg = AcceptedMessage.new(self.id, self.value)
         msg.conn = c
         c.send_data(msg.to_sendable)

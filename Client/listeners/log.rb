@@ -20,7 +20,7 @@ class LogListener
   end
 
   def on_connect(conn)
-    self.log_event("connect (#{$connections.length} total)", conn)
+    self.log_event("connect (#{$connector.size} total)", conn)
   end
 
   def on_receive(message)
@@ -36,7 +36,7 @@ class LogListener
   end
 
   def on_disconnect(conn)
-    self.log_event("disconnect (#{$connections.length} total)", conn)
+    self.log_event("disconnect (#{$connector.size} total)", conn)
   end
 
   def log_event(msg, conn = nil, lvl = Logger::INFO)

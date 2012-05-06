@@ -12,25 +12,25 @@ class VisualizingListener
     self.buffer = []
 
     EventMachine::PeriodicTimer.new(1) do
-      self.log.info { self.space_line(["|"] * ($connections.length + 1)) }
+      self.log.info { self.space_line(["|"] * ($connector.size + 1)) }
     end
   end
 
   # listener methods
 
   def on_connect(conn)
-    self.log.info { self.space_line(["|"] * $connections.length + ["+"]) }
+    self.log.info { self.space_line(["|"] * $connector.size + ["+"]) }
   end
 
   def on_disconnect(conn)
-    idx = $connections.index(conn)
+    idx = $connector.index(conn)
 
-    self.log.info { self.space_line(["|"] * (idx + 1) + ["X"] + ["|"] * ($connections.length - idx - 1)) }
+    self.log.info { self.space_line(["|"] * (idx + 1) + ["X"] + ["|"] * ($connector.size - idx - 1)) }
 
-    if idx != $connections.length - 1
+    if idx != $connector.size - 1
       # Extended disconnect - transition other lines in
       ["  /", " /", "/"].each do |sym|
-        self.log.info { self.space_line(["|"] * (idx + 1) + [sym] + ["/"] * ($connections.length - idx - 2)) }
+        self.log.info { self.space_line(["|"] * (idx + 1) + [sym] + ["/"] * ($connector.size - idx - 2)) }
       end
     end
   end
@@ -38,19 +38,19 @@ class VisualizingListener
   def on_receive(message)
     return if message.conn.nil?
 
-    idx = $connections.index(message.conn)
-    self.log.info { "|<-------" + ("---" * (idx)) + "|" + "  |" * ($connections.length - idx - 1) + "        " + message.log_msg }
+    idx = $connector.index(message.conn)
+    self.log.info { "|<-------" + ("---" * (idx)) + "|" + "  |" * ($connector.size - idx - 1) + "        " + message.log_msg }
   end
 
   def on_send(message)
     return if message.conn.nil?
 
-    idx = $connections.index(message.conn)
-    self.log.info { "|-------" + ("---" * (idx)) + ">|" + "  |" * ($connections.length - idx - 1) + "        " + message.log_msg }
+    idx = $connector.index(message.conn)
+    self.log.info { "|-------" + ("---" * (idx)) + ">|" + "  |" * ($connector.size - idx - 1) + "        " + message.log_msg }
   end
 
   def on_state_change(description, conn)
-    self.log.info { self.space_line(["$"] + ["|"] * $connections.length) + "        " + description }
+    self.log.info { self.space_line(["$"] + ["|"] * $connector.size) + "        " + description }
   end
 
   # printing & format methods
