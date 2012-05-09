@@ -19,6 +19,7 @@ class KennySync < EventMachine::Connection
 
   attr_accessor :port
   attr_accessor :ip
+  attr_accessor :uuid # this is the uuid of the node on the other end of this connection
   attr_accessor :validated
 
   #
@@ -26,18 +27,22 @@ class KennySync < EventMachine::Connection
   #
   def post_init
     self.dispatch_event(:on_connect, [self])
-    self.send_data(SyncMessage.new.to_sendable)
+    self.send_data(SyncMessage.new($uuid).to_sendable)
   end
 
   def receive_data(data)
     msg = Message.parse(data, self)
-    self.dispatch_event(:on_receive, [msg])
     return if msg.nil?
+
     msg.on_receive()
+    self.dispatch_event(:on_receive, [msg])
+
+    $connector.add(self.uuid, self) if msg.is_a? SyncMessage
   end
 
   def unbind
     self.dispatch_event(:on_disconnect, [self])
+    $connector.remove(self.uuid)
   end
 
   #
@@ -56,19 +61,11 @@ class KennySync < EventMachine::Connection
   end
 
   def dispatch_event(evt, args)
-    ($listeners + [$connector]).each do |listener|
+    $listeners.each do |listener|
       if listener.respond_to? evt
         listener.send(evt, *args)
       end
     end
-  end
-
-  def uuid
-    # The UUID of the machine on the other end
-    # TODO this should be something else
-    
-    self.populate_variables
-    return self.port
   end
 
 end

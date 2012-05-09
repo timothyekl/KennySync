@@ -23,7 +23,7 @@ class Message
   end
 
   def self.parse(str, conn = nil)
-    clsmap = {:kennysync => [SyncMessage, [:conn]],
+    clsmap = {:kennysync => [SyncMessage, [:value, :conn]],
               :info => [InfoMessage, [:value, :conn]],
               :broadcast => [BroadcastMessage, [:value, :conn]],
               :prepare => [PrepareMessage, [:value, :id, :conn]],
@@ -71,16 +71,17 @@ class Message
 end
 
 class SyncMessage < Message
-  def initialize(conn = nil)
-    super(:kennysync, nil, nil, conn)
+  def initialize(uuid, conn = nil)
+    super(:kennysync, nil, uuid, conn)
   end
 
   def to_s
-    return "kennysync"
+    return "kennysync uuid #{self.value}"
   end
 
   def on_receive
     self.conn.validated = true
+    self.conn.uuid = self.value
   end
 
   def log_msg

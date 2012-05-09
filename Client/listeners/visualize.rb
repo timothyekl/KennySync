@@ -19,7 +19,7 @@ class VisualizingListener
   # listener methods
 
   def on_connect(conn)
-    self.log.info { self.space_line(["|"] * $connector.size + ["+"]) }
+    self.log.info { self.space_line(["|"] * ($connector.size + 1) + ["+"]) }
   end
 
   def on_disconnect(conn)
@@ -39,7 +39,8 @@ class VisualizingListener
     return if message.conn.nil?
 
     idx = $connector.index(message.conn)
-    self.log.info { "|<-------" + ("---" * (idx)) + "|" + "  |" * ($connector.size - idx - 1) + "        " + message.log_msg }
+    idx = $connector.size if idx.nil? and message.is_a? SyncMessage
+    self.log.info { "|<-------" + ("---" * (idx)) + "|" + "  |" * ($connector.size - idx) + "        " + message.log_msg }
   end
 
   def on_send(message)

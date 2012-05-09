@@ -8,17 +8,25 @@
 require 'eventmachine'
 require 'logger'
 require 'optparse'
+require 'uuid'
 
 require './kennysync.rb'
+require './connector.rb'
 Dir['./listeners/*.rb'].each do |l|
   require l
 end
 
 START_PORT = 7115
 
+$uuid = UUID.new.generate
+
 options = {:log_level => :info}
 OptionParser.new do |opts|
   opts.banner = "Usage: run.rb [options]"
+
+  opts.on("-u", "--uuid [UUID]") do |u|
+    $uuid = u
+  end
 
   opts.on("-d", "--debug-level LEVEL", [:fatal, :error, :warn, :info, :debug], "Logging threshold") do |d|
     options[:log_level] = d
@@ -67,6 +75,7 @@ EventMachine::run {
   end
 
   # Kind of a hack, but we want to unconditionally log listen port
+  log_listener.log.info('general') { "Using UUID #{$uuid}" }
   log_listener.log.info('general') { "Listening on port #{listen_port}" }
   
   # Each node needs a unique identifer. We're using the port number as a cheap hack.
