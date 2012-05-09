@@ -20,6 +20,16 @@ class Connector
     @connections[uuid] = nil
   end
 
+  # Check whether the given connection is known (active or inactive)
+  def include?(conn)
+    return @uuids.include? conn.uuid
+  end
+
+  # Check whether the given UUID is known (active or inactive)
+  def include_uuid?(uuid)
+    return @uuids.include? uuid
+  end
+
   def size(with_inactive = false)
     return @uuids.size if with_inactive
     return @connections.select {|k,v| !v.nil?}.size
