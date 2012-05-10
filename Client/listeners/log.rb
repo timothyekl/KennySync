@@ -39,6 +39,10 @@ class LogListener
     self.log_event("disconnect (#{$connector.size} total)", conn)
   end
 
+  def on_log(message, conn, level)
+    self.log_event(message, conn, level)
+  end
+
   def log_event(msg, conn = nil, lvl = Logger::INFO)
     if conn.nil?
       self.log.add(lvl, nil, "general") { msg }

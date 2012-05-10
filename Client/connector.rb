@@ -25,6 +25,14 @@ class Connector
     return @uuids.include? conn.uuid
   end
 
+  # Check whether a connection to the given host is known (active or inactive)
+  def include_conn_to?(ip, port)
+    self.each do |conn|
+      return true if conn.ip == ip and conn.port == port
+    end
+    return false
+  end
+
   # Check whether the given UUID is known (active or inactive)
   def include_uuid?(uuid)
     return @uuids.include? uuid
