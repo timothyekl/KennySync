@@ -69,6 +69,12 @@ class Message
       self.state_changed("learned the value of #{self.value} on id #{self.id}")
     end
   end
+
+  def log(msg, lvl = nil)
+    args = [msg, self.conn]
+    args << lvl if !lvl.nil?
+    self.conn.dispatch_event(:on_log, args)
+  end
 end
 
 class NodeMessage < Message
@@ -77,7 +83,7 @@ class NodeMessage < Message
   end
 
   def on_receive
-    puts "DEBUG received node notification '#{self.value}' from #{self.conn.uuid}"
+    self.log("Received notification of node at #{self.value}", Logger::DEBUG)
     
     addr = self.value
     parts = addr.split(":")
@@ -88,7 +94,7 @@ class NodeMessage < Message
     return if port <= 0 || port >= 65536
 
     if !$connector.include_conn_to?(ip, port)
-      puts "DEBUG connecting to #{ip}:#{port}"
+      self.log("Connecting to #{ip}:#{port} as result of notification", Logger::DEBUG)
       EventMachine::connect(ip, port, KennySync) 
     end
   end
@@ -120,9 +126,9 @@ class SyncMessage < Message
     self.conn.uuid = self.value
 
     # Send node list
-    puts "DEBUG: received sync, sending nodes"
+    self.log("Received sync message, sending node list", Logger::DEBUG)
     $connector.each do |c|
-      puts "DEBUG: sending node #{c.ip}:#{c.port}"
+      self.log("Sending node notification: #{c.ip}:#{c.port}", Logger::DEBUG)
       self.conn.send_data(NodeMessage.new("#{c.ip}:#{c.port}").to_sendable)
     end
   end
