@@ -21,13 +21,14 @@ class KennySync < EventMachine::Connection
   attr_accessor :ip
   attr_accessor :uuid # this is the uuid of the node on the other end of this connection
   attr_accessor :validated
+  attr_accessor :remote_listen_port # this is the port the remote end is listening on
 
   #
   # EventMachine methods
   #
   def post_init
     self.dispatch_event(:on_connect, [self])
-    self.send_data(SyncMessage.new($uuid).to_sendable)
+    self.send_data(SyncMessage.new($listen_port, $uuid).to_sendable)
   end
 
   def receive_data(data)

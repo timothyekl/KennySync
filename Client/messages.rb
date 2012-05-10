@@ -23,7 +23,7 @@ class Message
   end
 
   def self.parse(str, conn = nil)
-    clsmap = {:kennysync => [SyncMessage, [:value, :conn]],
+    clsmap = {:kennysync => [SyncMessage, [:id, :value, :conn]],
               :info => [InfoMessage, [:value, :conn]],
               :broadcast => [BroadcastMessage, [:value, :conn]],
               :node => [NodeMessage, [:value, :conn]],
@@ -111,25 +111,25 @@ class NodeMessage < Message
 end
 
 class SyncMessage < Message
-  def initialize(uuid, conn = nil)
-    super(:kennysync, nil, uuid, conn)
+  def initialize(port, uuid, conn = nil)
+    super(:kennysync, port, uuid, conn)
   end
 
   def to_s
-    # word "uuid" required due to parsing specifics
-    # it has no actual meaning
-    return "kennysync uuid #{self.value}"
+    # in this context, id=listening port and value=uuid string
+    return "kennysync #{self.id} #{self.value}"
   end
 
   def on_receive
     self.conn.validated = true
+    self.conn.remote_listen_port = self.id
     self.conn.uuid = self.value
 
     # Send node list
     self.log("Received sync message, sending node list", Logger::DEBUG)
     $connector.each do |c|
-      self.log("Sending node notification: #{c.ip}:#{c.port}", Logger::DEBUG)
-      self.conn.send_data(NodeMessage.new("#{c.ip}:#{c.port}").to_sendable)
+      self.log("Sending node notification: #{c.ip}:#{c.remote_listen_port}", Logger::DEBUG)
+      self.conn.send_data(NodeMessage.new("#{c.ip}:#{c.remote_listen_port}").to_sendable)
     end
   end
 

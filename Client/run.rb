@@ -63,26 +63,26 @@ EventMachine::run {
   end
 
   # Start the server
-  listen_port = START_PORT
+  $listen_port = START_PORT
   listening = false
-  while not listening and listen_port < 65536
+  while not listening and $listen_port < 65536
     begin
-      EventMachine::start_server("127.0.0.1", listen_port, KennySync)
+      EventMachine::start_server("127.0.0.1", $listen_port, KennySync)
       listening = true
     rescue
-      listen_port += 1
+      $listen_port += 1
     end
   end
 
   # Kind of a hack, but we want to unconditionally log listen port
   log_listener.log.info('general') { "Using UUID #{$uuid}" }
-  log_listener.log.info('general') { "Listening on port #{listen_port}" }
+  log_listener.log.info('general') { "Listening on port #{$listen_port}" }
   
   # Each node needs a unique identifer. We're using the port number as a cheap hack.
-  $nodeID = listen_port
+  $nodeID = $listen_port
 
   # Now connect to other nodes
-  START_PORT.upto(listen_port - 1).each do |port|
+  START_PORT.upto($listen_port - 1).each do |port|
     EventMachine::connect("127.0.0.1", port, KennySync)
   end
 
