@@ -26,6 +26,7 @@ class Message
     clsmap = {:kennysync => [SyncMessage, [:value, :conn]],
               :info => [InfoMessage, [:value, :conn]],
               :broadcast => [BroadcastMessage, [:value, :conn]],
+              :node => [NodeMessage, [:value, :conn]],
               :prepare => [PrepareMessage, [:value, :id, :conn]],
               :promise => [PromiseMessage, [:id, :value, :conn]],
               :acceptrequest => [AcceptRequestMessage, [:id, :value, :conn]],
@@ -70,18 +71,60 @@ class Message
   end
 end
 
+class NodeMessage < Message
+  def initialize(addr, conn = nil)
+    super(:node, nil, addr, conn)
+  end
+
+  def on_receive
+    puts "DEBUG received node notification '#{self.value}' from #{self.conn.uuid}"
+    
+    addr = self.value
+    parts = addr.split(":")
+    return if parts.size != 2
+
+    ip = parts[0]
+    port = parts[1].to_i
+    return if port <= 0 || port >= 65536
+
+    if !$connector.include_conn_to?(ip, port)
+      puts "DEBUG connecting to #{ip}:#{port}"
+      EventMachine::connect(ip, port, KennySync) 
+    end
+  end
+
+  def to_s
+    # word "at" required due to parsing specifics
+    # it has no actual meaning
+    return "node at #{self.value}"
+  end
+
+  def log_msg
+    return "node #{self.value}"
+  end
+end
+
 class SyncMessage < Message
   def initialize(uuid, conn = nil)
     super(:kennysync, nil, uuid, conn)
   end
 
   def to_s
+    # word "uuid" required due to parsing specifics
+    # it has no actual meaning
     return "kennysync uuid #{self.value}"
   end
 
   def on_receive
     self.conn.validated = true
     self.conn.uuid = self.value
+
+    # Send node list
+    puts "DEBUG: received sync, sending nodes"
+    $connector.each do |c|
+      puts "DEBUG: sending node #{c.ip}:#{c.port}"
+      self.conn.send_data(NodeMessage.new("#{c.ip}:#{c.port}").to_sendable)
+    end
   end
 
   def log_msg
