@@ -7,6 +7,8 @@ require './messages.rb'
 # Global object instances
 $listeners = []
 
+$type = nil # either :paxos, :input, or :output
+
 # Paxos protocol info
 $highestAccepted = nil
 $highestPromised = 0
@@ -21,13 +23,19 @@ class KennySync < EventMachine::Connection
   attr_accessor :ip
   attr_accessor :uuid # this is the uuid of the node on the other end of this connection
   attr_accessor :validated
+  attr_accessor :type # type of the node on the other end
 
   #
   # EventMachine methods
   #
   def post_init
+    $type = self.node_type
     self.dispatch_event(:on_connect, [self])
     self.send_data(SyncMessage.new($uuid).to_sendable)
+  end
+
+  def node_type
+    return :paxos
   end
 
   def receive_data(data)
@@ -68,6 +76,18 @@ class KennySync < EventMachine::Connection
     end
   end
 
+end
+
+class InputNode < KennySync
+  def node_type
+    return :input
+  end
+end
+
+class OutputNode < KennySync
+  def node_type
+    return :output
+  end
 end
 
 class KennyCommand < EventMachine::Connection
