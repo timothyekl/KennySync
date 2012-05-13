@@ -1,10 +1,13 @@
+LATEX = pdflatex
+LATEXFLAGS = -interaction-batchmode
+
 all: paper FORCE
 
 paper: images acm_proc_article-sp.cls sigproc-sp.tex sigproc.bib
-	pdflatex -interaction=batchmode sigproc-sp.tex
+	${LATEX} ${LATEXFLAGS} sigproc-sp.tex
 	bibtex sigproc-sp
-	pdflatex -interaction=batchmode sigproc-sp.tex
-	pdflatex -interaction=batchmode sigproc-sp.tex
+	${LATEX} ${LATEXFLAGS} sigproc-sp.tex
+	${LATEX} ${LATEXFLAGS} sigproc-sp.tex
 	make clean-auxfiles
 
 images: flies.eps fly.eps rosette.ps

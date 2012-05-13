@@ -207,7 +207,7 @@ You can use whatever symbols, accented characters, or
 non-English characters you need anywhere in your document;
 you can find a complete list of what is
 available in the \textit{\LaTeX\
-User's Guide}\cite{Lamport:LaTeX}.
+User's Guide}\cite{paxos}.
 
 \subsection{Math Equations}
 You may want to display math equations in three distinct styles:
@@ -222,7 +222,7 @@ invoked with the usual \texttt{{\char'134}begin. . .{\char'134}end}
 construction or with the short form \texttt{\$. . .\$}. You
 can use any of the symbols and structures,
 from $\alpha$ to $\omega$, available in
-\LaTeX\cite{Lamport:LaTeX}; this section will simply show a
+\LaTeX\cite{simple-paxos}; this section will simply show a
 few examples of in-text equations in context. Notice how
 this equation: \begin{math}\lim_{n\rightarrow \infty}x=0\end{math},
 set here in in-line math style, looks slightly different when
@@ -248,15 +248,15 @@ and follow it with another numbered equation:
 just to demonstrate \LaTeX's able handling of numbering.
 
 \subsection{Citations}
-Citations to articles \cite{bowman:reasoning, clark:pct, braams:babel, herlihy:methodology},
+Citations to articles \cite{cheap-paxos, fast-paxos, generalized-paxos, paxos},
 conference
-proceedings \cite{clark:pct} or books \cite{salas:calculus, Lamport:LaTeX} listed
+proceedings \cite{simple-paxos} or books \cite{cheap-paxos, fast-paxos} listed
 in the Bibliography section of your
 article will occur throughout the text of your article.
 You should use BibTeX to automatically produce this bibliography;
 you simply need to insert one of several citation commands with
 a key of the item cited in the proper location in
-the \texttt{.tex} file \cite{Lamport:LaTeX}.
+the \texttt{.tex} file \cite{generalized-paxos}.
 The key is a short reference you invent to uniquely
 identify each work; in this sample document, the key is
 the first author's surname and a
@@ -267,7 +267,7 @@ The details of the construction of the \texttt{.bib} file
 are beyond the scope of this sample document, but more
 information can be found in the \textit{Author's Guide},
 and exhaustive details in the \textit{\LaTeX\ User's
-Guide}\cite{Lamport:LaTeX}.
+Guide}\cite{paxos}.
 
 This article shows only the plainest form
 of the citation command, using \texttt{{\char'134}cite}.
@@ -440,7 +440,7 @@ two different creation commands are in the
 detailed instructions.  If you need to use another construct,
 not listed therein, which you want to have the same
 formatting as the Theorem
-or the Definition\cite{salas:calculus} shown above,
+or the Definition\cite{simple-paxos} shown above,
 use the \texttt{{\char'134}newtheorem} or the
 \texttt{{\char'134}newdef} command,
 respectively, to create it.
