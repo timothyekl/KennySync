@@ -39,8 +39,12 @@ class VisualizingListener
     return if message.conn.nil?
 
     idx = $connector.index(message.conn)
-    idx = $connector.size if idx.nil? and message.is_a? SyncMessage
-    self.log.info { "|<-------" + ("---" * (idx)) + "|" + "  |" * ($connector.size - idx) + "        " + message.log_msg }
+    offset = 1
+    if idx.nil? and message.is_a? SyncMessage
+      idx = $connector.size
+      offset = 0
+    end
+    self.log.info { "|<-------" + ("---" * (idx)) + "|" + "  |" * ($connector.size - idx - offset) + "        " + message.log_msg }
   end
 
   def on_send(message)

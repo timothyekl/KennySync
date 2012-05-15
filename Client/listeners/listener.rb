@@ -12,5 +12,5 @@ module Listener
   def on_send(message) end
   def on_state_change(description, conn) end
   def on_disconnect(conn) end
-  def on_log(message, level) end
+  def on_log(message, conn, level) end
 end
