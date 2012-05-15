@@ -190,7 +190,7 @@ class PrepareMessage < Message
       t = Time.now
       id = t.to_i.to_s.rjust(20,'0')
       id = id.concat(t.nsec.to_s.rjust(20,'0'))
-      id = id.concat($nodeID.to_s.rjust(10,'0'))
+      id = id.concat($nodeID.to_s.gsub("-", "").to_i(16).to_s.rjust(40,'0'))
       id = id.to_i
     end
     super(:prepare, id, msg, conn)

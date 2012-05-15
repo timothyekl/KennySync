@@ -93,8 +93,8 @@ EventMachine::run {
   log_listener.log.info('general') { "Using UUID #{$uuid}" }
   log_listener.log.info('general') { "Listening on port #{$listen_port}" }
   
-  # Each node needs a unique identifer. We're using the port number as a cheap hack.
-  $nodeID = $listen_port
+  # Each node needs a unique identifer.
+  $nodeID = $uuid
 
   # Now connect to other nodes
   START_PORT.upto($listen_port - 1).each do |port|
