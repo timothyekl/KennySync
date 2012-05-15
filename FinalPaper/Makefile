@@ -1,5 +1,5 @@
 LATEX = pdflatex
-LATEXFLAGS = -interaction-batchmode
+LATEXFLAGS = -interaction=batchmode
 
 all: paper FORCE
 
