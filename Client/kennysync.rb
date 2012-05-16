@@ -7,8 +7,6 @@ require './messages.rb'
 # Global object instances
 $listeners = []
 
-$type = nil # either :paxos, :input, or :output
-
 # Paxos protocol info
 $highestAccepted = nil
 $highestPromised = 0
