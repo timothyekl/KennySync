@@ -47,18 +47,6 @@ OptionParser.new do |opts|
       options[:visualization] = v
     end
   end
-
-  opts.on("-t", "--type TYPE", "The type of the node") do |v|
-    if v.nil? || v == "paxos"
-      options[:type] = :paxos
-    elsif v == "input"
-      options[:type] = :input
-    elsif v == "output"
-      options[:type] = :output
-    else
-      options[:type] = :paxos
-    end
-  end
 end.parse!
 
 log_listener = LogListener.new(options[:log_file], options[:log_level])
@@ -74,15 +62,12 @@ EventMachine::run {
     $listeners << visual_listener
   end
 
-  typemap = {:paxos => KennySync, :input => InputNode, :output => OutputNode}
-  node_class = typemap[options[:type]]
-
   # Start the server
   $listen_port = START_PORT
   listening = false
   while not listening and $listen_port < 65536
     begin
-      EventMachine::start_server("127.0.0.1", $listen_port, node_class)
+      EventMachine::start_server("127.0.0.1", $listen_port, KennySync)
       listening = true
     rescue
       $listen_port += 1
@@ -98,7 +83,7 @@ EventMachine::run {
 
   # Now connect to other nodes
   START_PORT.upto($listen_port - 1).each do |port|
-    EventMachine::connect("127.0.0.1", port, node_class)
+    EventMachine::connect("127.0.0.1", port, KennySync)
   end
 
   EventMachine::open_keyboard(KennyCommand)

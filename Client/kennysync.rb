@@ -29,13 +29,8 @@ class KennySync < EventMachine::Connection
   # EventMachine methods
   #
   def post_init
-    $type = self.node_type
     self.dispatch_event(:on_connect, [self])
     self.send_data(SyncMessage.new($listen_port, $uuid).to_sendable)
-  end
-
-  def node_type
-    return :paxos
   end
 
   def receive_data(data)
@@ -76,18 +71,6 @@ class KennySync < EventMachine::Connection
     end
   end
 
-end
-
-class InputNode < KennySync
-  def node_type
-    return :input
-  end
-end
-
-class OutputNode < KennySync
-  def node_type
-    return :output
-  end
 end
 
 class KennyCommand < EventMachine::Connection

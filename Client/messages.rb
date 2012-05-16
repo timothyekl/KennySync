@@ -52,11 +52,6 @@ class Message
     return clsmap[type][0].new(*(clsmap[type][1].map{|s| args[s]}))
   end
 
-  # by default only paxos nodes handle messages. this can be overridden for particular messages.
-  def does_handle
-    if $type == :paxos then true else false end
-  end
-
   def on_receive
     self.conn.send_data("Parsed message of type: #{self.type.to_s}\n")
   end
@@ -123,10 +118,6 @@ class SyncMessage < Message
   def to_s
     # in this context, id=listening port and value=uuid string
     return "kennysync #{self.id} #{self.value}"
-  end
-
-  def does_handle
-    true
   end
 
   def on_receive
@@ -202,7 +193,6 @@ class PrepareMessage < Message
   # If this message has a larger ID than the current highest promise,
   # then make this the new promise and respond with such.
   def on_receive
-    return if not self.does_handle
     if self.id > $highestPromised
       self.state_changed("promise granted for #{self.id}")
       $highestPromised = self.id
@@ -231,7 +221,6 @@ class PromiseMessage < Message
   # we set our proposal's value to be the value of the highest numbered accepted proposal.
   # Otherwise, we can set it to anything.
   def on_receive
-    return if not self.does_handle
     if self.id == $currentProposalID
       $numAcceptances += 1
       if not self.value.nil?
@@ -266,7 +255,6 @@ class AcceptRequestMessage < Message
   # If we accept, set the new highestAccepted value and respond with an AcceptedMessage 
   # to the Proposer and every Learner.
   def on_receive
-    return if not self.does_handle
     if self.id >= $highestPromised
       self.state_changed("accept request granted for #{self.id} with value #{self.value}")
       # record that we've accepted it
@@ -299,7 +287,6 @@ class AcceptedMessage < Message
   # If we receive an Accepted message then we act as a learner and do what the request says. 
   # (i.e. update or respond)
   def on_receive
-    return if not self.does_handle
     # record the receipt of this acceptance
     if not $acceptedTracker.has_key?([self.id, self.value])
       $acceptedTracker[[self.id, self.value]] = 1
