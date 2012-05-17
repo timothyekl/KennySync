@@ -14,6 +14,18 @@ $acceptances = []
 $numAcceptances = 0
 $currentProposalID = nil
 $acceptedTracker = {}
+$inputQueue = Queue.new
+$outputQueue = Queue.new
+$sessionID = 0
+
+def addInput(val)
+  $inputQueue.enq val
+end
+
+# blocking!
+def getOutput
+  $outputQueue.deq
+end
 
 class KennySync < EventMachine::Connection
 
@@ -76,6 +88,11 @@ class KennyCommand < EventMachine::Connection
   include EventMachine::Protocols::LineText2
 
   def receive_line(data)
+    # assume data is of the form <type> <id> <value>
+    # modify it to be <type> <id> <sessionID>:<value>
+    tmp = data.split
+    tmp[2] = "#{$sessionID}:#{tmp[2]}"
+    data = tmp.join(" ")
     # Parse data into message
     msg = Message.parse(data)
 
@@ -85,4 +102,16 @@ class KennyCommand < EventMachine::Connection
     end
   end
 
+end
+
+class KennyBoxed < EventMachine::Connection
+  include EventMachine::Protocols::LineText2
+
+  def receive_line(data)
+    # data is a value to put on the input queue
+    addInput(data)
+
+    # get the next thing in the input queue so we can propose it
+    # TODO
+  end
 end

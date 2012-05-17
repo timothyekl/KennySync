@@ -67,6 +67,14 @@ class Message
   def has_learned
     if $acceptedTracker[[self.id, self.value]] > $connector.size.to_f / 2
       self.state_changed("learned the value of #{self.value} on id #{self.id}")
+      $sessionID += 1
+      # session over, nuke the previous state
+      $highestAccepted = nil
+      $highestPromised = 0
+      $acceptances = []
+      $numAcceptances = 0
+      $currentProposalID = nil
+      $acceptedTracker = {}
     end
   end
 
@@ -123,13 +131,13 @@ class SyncMessage < Message
   def on_receive
     self.conn.validated = true
     self.conn.remote_listen_port = self.id
-    self.conn.uuid = self.value # FIXME isn't this a string?
+    self.conn.uuid = self.value 
 
     # Send node list
     self.log("Received sync message, sending node list", Logger::DEBUG)
     $connector.each do |c|
-      self.log("Sending node notification: #{c.ip}:#{c.remote_listen_port}", Logger::DEBUG)
-      self.conn.send_data(NodeMessage.new("#{c.ip}:#{c.remote_listen_port}").to_sendable)
+      self.log("Sending node notification: #{c.ip}:#{c.remote_listen_port}:#{$sessionID}", Logger::DEBUG)
+      self.conn.send_data(NodeMessage.new("#{c.ip}:#{c.remote_listen_port}:#{$sessionID}").to_sendable)
     end
   end
 
@@ -186,17 +194,23 @@ class PrepareMessage < Message
     end
     super(:prepare, id, msg, conn)
     $currentProposalID = id
-    $acceptances = [[0,msg]]
+    $acceptances = [[0,msg.split(":")[1..-1].join(":")]]
     $numAcceptances = 0
   end
 
   # If this message has a larger ID than the current highest promise,
   # then make this the new promise and respond with such.
   def on_receive
+    # handle wrong session and extract value
+    tmp = self.value.split(":")
+    return if $sessionID != tmp[0].to_i
+    self.value = tmp[1..-1].join(":")
+    # get on with the real work
+    
     if self.id > $highestPromised
       self.state_changed("promise granted for #{self.id}")
       $highestPromised = self.id
-      msg = PromiseMessage.new(self.id, $highestAccepted)
+      msg = PromiseMessage.new(self.id,"#{$sessionID}:#{$highestAccepted}")
       msg.conn = self.conn
       self.conn.send_data(msg.to_sendable)
       self.conn.dispatch_event(:on_send, [msg])
@@ -221,6 +235,13 @@ class PromiseMessage < Message
   # we set our proposal's value to be the value of the highest numbered accepted proposal.
   # Otherwise, we can set it to anything.
   def on_receive
+    # handle wrong session and extract value
+    tmp = self.value.split(":")
+    return if $sessionID != tmp[0].to_i
+    self.value = tmp[1..-1].join(":")
+    if self.value == "" then self.value = nil end
+    # get on with the real work
+
     if self.id == $currentProposalID
       $numAcceptances += 1
       if not self.value.nil?
@@ -231,7 +252,7 @@ class PromiseMessage < Message
         bestVal = $acceptances.max_by {|x| x[0]} [1] # defaults to nil
         self.state_changed("quorum reached for #{self.id} with value #{bestVal}")
         $connector.each do |c|
-          msg = AcceptRequestMessage.new($currentProposalID, bestVal)
+          msg = AcceptRequestMessage.new($currentProposalID, "#{$sessionID}:#{bestVal}")
           msg.conn = c
           c.send_data(msg.to_sendable)
           c.dispatch_event(:on_send, [msg])
@@ -255,6 +276,12 @@ class AcceptRequestMessage < Message
   # If we accept, set the new highestAccepted value and respond with an AcceptedMessage 
   # to the Proposer and every Learner.
   def on_receive
+    # handle wrong session and extract value
+    tmp = self.value.split(":")
+    return if $sessionID != tmp[0].to_i
+    self.value = tmp[1..-1].join(":")
+    # get on with the real work
+
     if self.id >= $highestPromised
       self.state_changed("accept request granted for #{self.id} with value #{self.value}")
       # record that we've accepted it
@@ -265,7 +292,7 @@ class AcceptRequestMessage < Message
         $acceptedTracker[[self.id, self.value]] += 1
       end
       $connector.each do |c|
-        msg = AcceptedMessage.new(self.id, self.value)
+        msg = AcceptedMessage.new(self.id, "#{$sessionID}:#{self.value}")
         msg.conn = c
         c.send_data(msg.to_sendable)
         c.dispatch_event(:on_send, [msg])
@@ -287,6 +314,12 @@ class AcceptedMessage < Message
   # If we receive an Accepted message then we act as a learner and do what the request says. 
   # (i.e. update or respond)
   def on_receive
+    # handle wrong session and extract value
+    tmp = self.value.split(":")
+    return if $sessionID != tmp[0].to_i
+    self.value = tmp.slice(1,tmp.length).join(":")
+    # get on with the real work
+
     # record the receipt of this acceptance
     if not $acceptedTracker.has_key?([self.id, self.value])
       $acceptedTracker[[self.id, self.value]] = 1
