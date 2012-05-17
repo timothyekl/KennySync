@@ -13,6 +13,7 @@ $highestPromised = 0
 $acceptances = []
 $numAcceptances = 0
 $currentProposalID = nil
+$currentProposalValue = nil
 $acceptedTracker = {}
 $inputQueue = Queue.new
 $outputQueue = Queue.new
@@ -112,6 +113,12 @@ class KennyBoxed < EventMachine::Connection
     addInput(data)
 
     # get the next thing in the input queue so we can propose it
-    # TODO
+    if $currentProposalValue.nil? and not $inputQueue.empty?
+      $currentProposalValue = $inputQueue.deq
+    end
+    if not $currentProposalValue.nil?
+      msg = PrepareMessage.new("#{$sessionID}:#{$currentProposalValue}", 0)
+      $connector.each { |conn| conn.send_data msg.to_sendable }
+    end
   end
 end

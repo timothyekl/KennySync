@@ -66,15 +66,28 @@ class Message
 
   def has_learned
     if $acceptedTracker[[self.id, self.value]] > $connector.size.to_f / 2
+      # record the learned value
       self.state_changed("learned the value of #{self.value} on id #{self.id}")
+      $outputQueue.enq self.value
+      if $currentProposalValue == self.value then $currentProposalValue = nil end
+
+      # session change
       $sessionID += 1
-      # session over, nuke the previous state
+
       $highestAccepted = nil
       $highestPromised = 0
       $acceptances = []
       $numAcceptances = 0
       $currentProposalID = nil
       $acceptedTracker = {}
+
+      if $currentProposalValue.nil? and not $inputQueue.empty?
+        $currentProposalValue = $inputQueue.deq
+      end
+      if not $currentProposalValue.nil?
+        msg = PrepareMessage.new("#{$sessionID}:#{$currentProposalValue}", 0)
+        $connector.each { |conn| conn.send_data msg.to_sendable }
+      end
     end
   end
 

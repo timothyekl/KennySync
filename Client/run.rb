@@ -47,6 +47,14 @@ OptionParser.new do |opts|
       options[:visualization] = v
     end
   end
+
+  opts.on("-B", "--boxed", "Blackboxed Paxos") do |b|
+    if b.nil?
+      options[:boxed] = false
+    else
+      options[:boxed] = true
+    end
+  end
 end.parse!
 
 log_listener = LogListener.new(options[:log_file], options[:log_level])
@@ -86,5 +94,9 @@ EventMachine::run {
     EventMachine::connect("127.0.0.1", port, KennySync)
   end
 
-  EventMachine::open_keyboard(KennyCommand)
+  if not options[:boxed]
+    EventMachine::open_keyboard(KennyCommand)
+  else
+    EventMachine::open_keyboard(KennyBoxed)
+  end
 }
