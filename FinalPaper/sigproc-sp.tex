@@ -188,6 +188,7 @@ instance to accept a particular value \\ \hline
 \textit{Accept} & Follows Lamport's description: informs
 another KennySync instance that a given value has been agreed upon \\ \hline
 \end{tabular}
+\caption{List of message types known to KennySync nodes}
 \end{table*}
 
 \subsection{Event Architecture}
@@ -215,6 +216,65 @@ extensible framework for future development or modification; one needs simply to
 add a listener or message type with the appropriate method signatures to fully
 integrate it into the KennySync application.
 
+\subsection{Message Implementations}
+
+In keeping with the event architecture described above, KennySync implements the
+Paxos protocol by responding to individual messages it receives. As such, it
+divides Lamport's original Paxos protocol into several executable ``chunks,''
+each of which runs upon receipt of the appropriate message type. The start of a
+single Paxos run -- the sending of a Prepare message -- is generally triggered
+by receiving a value from a user or client program as input. From that point,
+the protocol proceeds as described in the following pseudocode chunks. Note that
+each chunk receives a message ID (uniquely identifying the particular value in
+question) and a value under consideration.
+
+\subsubsection{Prepare Message}
+
+\begin{verbatim}
+def prepare(id, value)
+  current_proposal_id = id
+  if id > highest_promised_id
+    highest_promised_id = id
+    send_message promise_message(id, highest_accepted_id)
+\end{verbatim}
+
+\subsubsection{Promise Message}
+
+For this chunk, note that the Paxos node has already extracted the highest
+accepted ID from the promise message sent from the Prepare phase and checked its
+validity (via its parsing mechanism); as such, it is replaced here by the actual
+value in question.
+
+\begin{verbatim}
+def promise(id, value)
+  if id == current_proposal_id
+    number_acceptances += 1
+    append value to acceptances
+    if number_acceptances > number_connections / 2
+      best_value = best of acceptances
+      send_message accept_request_message(id, best_value)
+\end{verbatim}
+
+\subsubsection{Accept-Request Message}
+
+\begin{verbatim}
+def acceptrequest(id, value)
+  if id >= highest_promised_id
+    highest_accepted_id = id
+    send_message accepted_message(id, value)
+\end{verbatim}
+
+\subsubsection{Accepted Message}
+
+\begin{verbatim}
+def accepted(id, value)
+  accepted_items[id, value] += 1
+  if accepted_items[id, value] > number_connections / 2
+    output value
+    read next_id, next_value from input
+    send_message prepare_message(next_id, next_value)
+\end{verbatim}
+
 \subsection{Database Support}
 
 In addition to providing a complete implementation of the Paxos protocol,
@@ -233,15 +293,25 @@ is similar to the problem that so-called ``Fast Paxos'' sought to defeat by
 persisting a distinguished node across multiple runs \cite{fast-paxos}.)
 
 To avoid this problem, KennySync fully encapsulates the Paxos protocol and
-allows users to mark particular instances of the program as ``input'' or
-``output'' nodes. These nodes do not participate in Paxos itself, and have no
-say in reaching consensus on a particular value. Instead, input nodes are
-responsible for receiving requests from external clients and forwarding them
-into the Paxos nodes, and output nodes observe values learned by the Paxos
-cohort and forward them to the Redis database. In this way, the Paxos nodes
-never communicate directly with either the environment or Redis; as such,
-KennySync can repeatedly instantiate runs of the Paxos protocol while
-maintaining a common interface to an end user.
+allows users to ``black box'' certain Paxos nodes on program startup. This
+provides the ability to input proposed values directly into the black-boxed node
+as plain text input, and rely on the node in question to run the value through
+the full Paxos protocol. To this end, each node maintains input and output
+queues; the input queue receives values from the environment, while the output
+queue streams learned values out into a daemon or other external program. In
+this way, users can use KennySync as a thin interface between a Redis client and
+corresponding database; the user simply relies on Paxos to learn values it
+provides and pass them through to the database as required. This architecture is
+illustrated in Figure 1.
+
+\begin{figure}
+\centering
+\includegraphics[width=3in]{arch.png}
+\caption{Architecture of a KennySync network: clients stream values into a
+single node's input queue, allow the network to learn the values, then rely on
+the node's output queue to provide those values to a database backend or other
+listener program}
+\end{figure}
 
 \section{Results}
 
